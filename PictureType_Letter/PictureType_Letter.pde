@@ -1,8 +1,25 @@
+/*
+~ Author: Tiemen Rapati
+~ Date: March 2020
+~ License: Free use (CC0)
+
+This game lets MacOS speak a word, prompting the player (3 or 4yo)
+to type the first letter of that word. If they get it right, they
+get rewarded by a picture of that word.
+
+<space bar> repeats the current word
+
+Feel free to add more images and words by adding the image to the 
+/images/ dir, and add the corresponding keyword/filename combo to
+the text file in the /keywords/ folder. 
+
+*/
+
 PFont font;
 PImage image;
 StringDict keywords;
 
-String tableFilename = "max.txt";
+String tableFilename = "general.txt";
 
 char[] alphabet = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 char[] numbers = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
@@ -39,8 +56,6 @@ void setup()
   println(keywords);
 
   imageMode(CENTER);
-
-  //image = loadImage("images/"+words[currentImageIndex]+".png");
 }
 
 void draw()
@@ -52,7 +67,7 @@ void draw()
     currentWordIndex = int(random(keywords.size()));
     currentWord = keywords.key(currentWordIndex);
     
-    askQuestion();
+    say(currentWord);
     
     currentString = "";
     askNewQuestion = false;
@@ -61,6 +76,9 @@ void draw()
   
   // -- draw
   
+  noCursor();
+  
+  // background colour
   colorMode(RGB, 255, 255, 255);
   
   if (frameCount*3 < 255)
@@ -69,27 +87,30 @@ void draw()
     background(0);
 
 
-  textAlign(CENTER, CENTER);
-  noCursor();
-  
+  // background image
   if (showPicture)
   {
     background(0, 0, 0);
     image(image, width/2, height/2);
-    
   }
+  
+  // text 
+  textAlign(CENTER, CENTER);
   
   if (isAnimating)
   {
+    // animating
     renderTextAnimation();
-  } else
-  if(showPicture)
+  } 
+  else if(showPicture)
   {
+    // white overlay
     fill(255, 200);
     text(currentString, 60, 60, width - 60*2, height - 60*2);
   }
   else
   {
+    // white
     fill(255);
     text(currentString, 60, 60, width - 60*2, height - 60*2);
   }
@@ -98,15 +119,17 @@ void draw()
 void keyReleased()
 {
   if (isAnimating || askNewQuestion)
-    return;
+    return; // no keys when animating
 
   if (key == ' ' && !showPicture) {
-    askQuestion();
+    // repeat word by pressing space bar
+    say(currentWord);
     return;
   }
 
-  if (showPicture) {
-
+  if (showPicture) 
+  {
+    // if in show picture mode, any keypress will reset state and trigger new word
     showPicture = false;
     currentString = "";
     
@@ -114,63 +137,55 @@ void keyReleased()
     return;
   }
 
-  //if (key == ENTER) {
-  //  String[] params = {
-  //    "say", currentString
-  //  };
-  //  exec(params);
-  //  currentString = "";
-  //  return;
-  //}
-
-  //if (key == BACKSPACE && currentString.length() > 0) {
-  //  currentString = currentString.substring(0, currentString.length()-1);
-  //  return;
-  //}
-
   key = str(key).toLowerCase().charAt(0);
 
-  if (charExists(alphabet, key) || charExists(numbers, key))
+  if (charExists(alphabet, key))
   {
+    // if letter, add lowercase and uppercase to displayed text
     currentString = str(key).toUpperCase() + str(key);
 
     if(currentWord.charAt(0) == key) 
     {
-      // match!
+      // letter matches the first letter of the word, wohoo!
       triggerTextAnimation();
       println("bingo: "+currentString);
     }
 
+    say(str(key));
+  }
+
+}
+
+void triggerTextAnimation()
+{
+  tAnimStart = frameCount;
+  tAnimEnd = frameCount + tAnimLength;
+
+  isAnimating = true;
+}
+
+void renderTextAnimation()
+{
+  float t = (frameCount - tAnimStart) / float(tAnimLength);
+  
+  if (frameCount > tAnimEnd) {
+    isAnimating = false;
+    showPicture = true;
+    image = loadImageResize("images/"+keywords.get(currentWord), width, height);
+
     String[] params = {
-      "say", str(key)
+      "say", currentWord
     };
     exec(params);
   }
+  
+  colorMode(HSB, 360, 255, 255);
+  float h = 180 + t*180;
+  
+  
+  fill(h, 255, constrain(255 * (1-t)*4, 0, 255));
+  text(currentString, 60, 60, width - 60*2, height - 60*2);
 
-}
-
-boolean charExists(char[] arr, char val) {
-
-  boolean exists = false;
-
-  for (int i = 0; i < arr.length; i++) {
-    if (byte(arr[i]) == byte(val)) {
-      exists = true;
-    }
-  }
-
-  return exists;
-}
-
-int indexOfString(String[] arr, String val) {
-
-  int index = -1;
-
-  for (int i = 0; i < arr.length; i++) {
-    if (arr[i].equals(val)) {
-      index = i;
-    }
-  }
-
-  return index;
+  
+  colorMode(RGB, 255, 255, 255);
 }
