@@ -1,5 +1,5 @@
-# quarantaine
-educational games for kids while in quarantaine
+# Quarantaine Games
+Educational games for kids while in quarantaine
 
 Hi all,
 I appreciate a lot of us here might not be at this stage of our lives (yet), but 
